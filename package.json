@@ -1,0 +1,26 @@
+{
+  "name": "starter",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "parcel index.html",
+    "dev": "parcel index.html",
+    "build": "parcel build index.html"
+  },
+  "author": "Aryan",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "babel": "^5.8.38",
+    "core-js": "^3.44.0",
+    "fraction.js": "^5.2.2",
+    "fractional": "^1.0.0",
+    "install": "^0.13.0",
+    "parcel": "^2.15.4",
+    "regenerator-runtime": "^0.14.1",
+    "sass": "^1.75.0"
+  },
+  "devDependencies": {
+    "@parcel/transformer-sass": "^2.15.4"
+  }
+}
