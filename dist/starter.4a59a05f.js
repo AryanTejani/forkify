@@ -697,7 +697,16 @@ const controlRecipes = async ()=>{
         (0, _viewRecipeJsDefault.default).renderError(error.message);
     }
 };
-const pagination = ()=>{};
+const pagination = (goToPage)=>{
+    console.log("Going to page:", goToPage);
+    _modelJs.state.search.page = goToPage;
+    // Re-render results and pagination
+    (0, _resultViewJsDefault.default).render(_modelJs.getSearchResults(goToPage));
+    (0, _paginationViewJsDefault.default).render({
+        result: _modelJs.state.search.result,
+        page: _modelJs.state.search.page
+    });
+};
 const controlSearchResults = async ()=>{
     (0, _resultViewJsDefault.default).renderSpinner();
     try {
@@ -706,8 +715,11 @@ const controlSearchResults = async ()=>{
         await _modelJs.loadSearch(`${query}`);
         console.log(_modelJs.state.search.result);
         // Render the search results
-        (0, _resultViewJsDefault.default).render(_modelJs.getSearchResults(1));
-        (0, _paginationViewJsDefault.default).render(_modelJs.state.search.result);
+        (0, _resultViewJsDefault.default).render(_modelJs.getSearchResults(_modelJs.state.search.page));
+        (0, _paginationViewJsDefault.default).render({
+            result: _modelJs.state.search.result,
+            page: _modelJs.state.search.page
+        });
     } catch (error) {
         console.log(error);
     }
@@ -715,6 +727,7 @@ const controlSearchResults = async ()=>{
 const init = ()=>{
     (0, _viewRecipeJsDefault.default).addHandlerRenderer(controlRecipes);
     (0, _searchViewJsDefault.default).addHandlerSearch(controlSearchResults);
+    (0, _paginationViewJsDefault.default).addHandleClick(pagination);
 };
 init();
 
@@ -765,7 +778,8 @@ const state = {
     search: {
         query: '',
         result: [],
-        RES_PER_PAGE: (0, _configJs.RES_PER_PAGE)
+        RES_PER_PAGE: (0, _configJs.RES_PER_PAGE),
+        page: 1
     }
 };
 const loadRecipes = async (id)=>{
@@ -791,6 +805,7 @@ const loadRecipes = async (id)=>{
 const loadSearch = async (query)=>{
     try {
         state.search.query = query;
+        state.search.page = 1; // Reset to page 1 for new search
         const data = await (0, _helperJs.getJSON)(`?search=${query}`);
         state.search.result = data.data.recipes.map((recipe)=>{
             return {
@@ -805,7 +820,7 @@ const loadSearch = async (query)=>{
         throw error;
     }
 };
-const getSearchResults = (page)=>{
+const getSearchResults = (page = state.search.page)=>{
     const start = (page - 1) * state.search.RES_PER_PAGE;
     const end = page * state.search.RES_PER_PAGE;
     return state.search.result.slice(start, end);
@@ -1454,18 +1469,29 @@ var _view = require("./View");
 var _viewDefault = parcelHelpers.interopDefault(_view);
 class paginationView extends (0, _viewDefault.default) {
     _parentElement = document.querySelector('.pagination');
+    addHandleClick(handler) {
+        this._parentElement.addEventListener('click', (e)=>{
+            const btn = e.target.closest('.btn--inline');
+            if (!btn) return;
+            const goToPage = +btn.dataset.goto;
+            console.log('Button clicked, going to page:', goToPage);
+            handler(goToPage);
+        });
+    }
     _getMarkup() {
-        const numPages = Math.ceil(this._data.length / 10);
+        const numPages = Math.ceil(this._data.result.length / 10);
         console.log('Number of pages:', numPages);
-        console.log('Data length:', this._data.length);
+        console.log('Data length:', this._data.result.length);
         // Generate pagination markup
         return this._generateMarkup(numPages);
     }
     _generateMarkup(numPages) {
-        const curPage = 1; // You'll need to track current page
+        const curPage = this._data.page || 1; // Get current page from data
+        console.log('Current page:', curPage, 'Total pages:', numPages);
+        let markup = '';
         // Previous page button
-        if (curPage > 1) return `
-        <button class="btn--inline pagination__btn--prev">
+        if (curPage > 1) markup += `
+        <button data-goto="${curPage - 1}" class="btn--inline pagination__btn--prev">
           <svg class="search__icon">
             <use href="${0, _iconsSvgDefault.default}#icon-arrow-left"></use>
           </svg>
@@ -1473,15 +1499,15 @@ class paginationView extends (0, _viewDefault.default) {
         </button>
       `;
         // Next page button
-        if (curPage < numPages) return `
-        <button class="btn--inline pagination__btn--next">
+        if (curPage < numPages) markup += `
+        <button data-goto="${curPage + 1}" class="btn--inline pagination__btn--next">
           <span>Page ${curPage + 1}</span>
           <svg class="search__icon">
             <use href="${0, _iconsSvgDefault.default}#icon-arrow-right"></use>
           </svg>
         </button>
       `;
-        return '';
+        return markup;
     }
 }
 exports.default = new paginationView();

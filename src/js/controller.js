@@ -30,7 +30,17 @@ const controlRecipes = async () => {
   }
 };
 
-const pagination = () => {};
+const pagination = (goToPage) => {
+  console.log("Going to page:", goToPage);
+  model.state.search.page = goToPage;
+  
+  // Re-render results and pagination
+  resultView.render(model.getSearchResults(goToPage));
+  paginationView.render({
+    result: model.state.search.result,
+    page: model.state.search.page
+  });
+};
 
 const controlSearchResults = async ()=>{
   resultView.renderSpinner()
@@ -43,15 +53,21 @@ const controlSearchResults = async ()=>{
     console.log(model.state.search.result)
     
     // Render the search results
-    resultView.render(model.getSearchResults(1));
-    paginationView.render(model.state.search.result)
+    resultView.render(model.getSearchResults(model.state.search.page));
+    paginationView.render({
+      result: model.state.search.result,
+      page: model.state.search.page
+    })
   } catch (error) {
     console.log(error)
   }
 }
 
+
+
 const init = ()=>{
   recipeView.addHandlerRenderer(controlRecipes);
   searchView.addHandlerSearch(controlSearchResults)
+  paginationView.addHandleClick(pagination)
 }
 init()
